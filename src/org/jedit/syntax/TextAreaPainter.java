@@ -1,13 +1,15 @@
-package org.jedit.syntax;
-
 /*
  * TextAreaPainter.java - Paints the text area
  * Copyright (C) 1999 Slava Pestov
+ *
+ * 08/05/2002	Cursor (caret) rendering fixed for JDK 1.4 (Anonymous)
  *
  * You may use and modify this package for any purpose. Redistribution is
  * permitted, in both source and binary form, provided that this notice
  * remains intact in all source distributions of this package.
  */
+
+package org.jedit.syntax;
 
 import javax.swing.ToolTipManager;
 import javax.swing.text.*;
@@ -42,7 +44,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
 
       setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
 
-      setFont(new Font("Monospaced",Font.PLAIN,14));
+      setFont(textArea.getFont());
       setForeground(Color.black);
       setBackground(Color.white);
 
@@ -61,6 +63,10 @@ public class TextAreaPainter extends JComponent implements TabExpander
       eolMarkers = defaults.eolMarkers;
    }
 
+   public int getGutterOffset() {
+      return 0;
+   }
+
    /**
     * Returns if this component can be traversed by pressing the
     * Tab key. This returns false.
@@ -73,7 +79,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
    /**
     * Returns the syntax styles used to paint colorized text. Entry <i>n</i>
     * will be used to paint tokens with id = <i>n</i>.
-    * @see org.gjt.sp.jedit.syntax.Token
+    * @see org.syntax.jedit.Token
     */
    public final SyntaxStyle[] getStyles()
    {
@@ -84,7 +90,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
     * Sets the syntax styles used to paint colorized text. Entry <i>n</i>
     * will be used to paint tokens with id = <i>n</i>.
     * @param styles The syntax styles
-    * @see org.gjt.sp.jedit.syntax.Token
+    * @see org.syntax.jedit.Token
     */
    public final void setStyles(SyntaxStyle[] styles)
    {
@@ -474,7 +480,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
 
    // protected members
    protected JEditTextArea textArea;
-   
+
    protected SyntaxStyle[] styles;
    protected Color caretColor;
    protected Color selectionColor;
@@ -489,7 +495,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
    protected boolean eolMarkers;
    protected int cols;
    protected int rows;
-   
+
    protected int tabSize;
    protected FontMetrics fm;
 
@@ -539,7 +545,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
       if(eolMarkers)
       {
          gfx.setColor(eolMarkerColor);
-         gfx.drawString(".",x,y);
+         gfx.drawString("¶",x,y);
       }
    }
 
@@ -561,7 +567,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
       if(eolMarkers)
       {
          gfx.setColor(eolMarkerColor);
-         gfx.drawString(".",x,y);
+         gfx.drawString("¶",x,y);
       }
    }
 
@@ -665,7 +671,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
          fm.getHeight() - 1);
    }
 
-   protected void paintCaret(Graphics gfx, int line, int y)
+protected void paintCaret(Graphics gfx, int line, int y)
    {
       if(textArea.isCaretVisible())
       {
@@ -677,7 +683,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
             fm.charWidth('w') : 1);
          y += fm.getLeading() + fm.getMaxDescent();
          int height = fm.getHeight();
-         
+
          gfx.setColor(caretColor);
 
          if(textArea.isOverwriteEnabled())
@@ -687,7 +693,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
          }
          else
          {
-            gfx.drawRect(caretX,y,caretWidth - 1,height - 1);
+            gfx.drawRect(caretX,y,caretWidth, height - 1);
          }
       }
    }

@@ -1,5 +1,3 @@
-package org.jedit.syntax;
-
 /*
  * JEditTextArea.java - jEdit's text component
  * Copyright (C) 1999 Slava Pestov
@@ -9,7 +7,8 @@ package org.jedit.syntax;
  * remains intact in all source distributions of this package.
  */
 
-import javax.swing.border.*;
+package org.jedit.syntax;
+
 import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.undo.*;
@@ -77,7 +76,6 @@ public class JEditTextArea extends JComponent
       enableEvents(AWTEvent.KEY_EVENT_MASK);
 
       // Initialize some misc. stuff
-      painter = new TextAreaPainter(this,defaults);
       documentHandler = new DocumentHandler();
       listenerList = new EventListenerList();
       caretEvent = new MutableCaretEvent();
@@ -86,35 +84,70 @@ public class JEditTextArea extends JComponent
       blink = true;
 
       // Initialize the GUI
+      // Initialize the GUI
       setLayout(new ScrollLayout());
-      add(CENTER,painter);
       add(RIGHT,vertical = new JScrollBar(JScrollBar.VERTICAL));
       add(BOTTOM,horizontal = new JScrollBar(JScrollBar.HORIZONTAL));
-      
-      vertical.putClientProperty("JScrollBar.isFreeStanding", Boolean.FALSE);
-      horizontal.putClientProperty("JScrollBar.isFreeStanding", Boolean.FALSE);
-      
+
       // Add some event listeners
       vertical.addAdjustmentListener(new AdjustHandler());
       horizontal.addAdjustmentListener(new AdjustHandler());
-      painter.addComponentListener(new ComponentHandler());
-      painter.addMouseListener(new MouseHandler());
-      painter.addMouseMotionListener(new DragHandler());
       addFocusListener(new FocusHandler());
-
-      // Load the defaults
-      setInputHandler(defaults.inputHandler);
-      setDocument(defaults.document);
-      editable = defaults.editable;
-      caretVisible = defaults.caretVisible;
-      caretBlinks = defaults.caretBlinks;
-      electricScroll = defaults.electricScroll;
-
-      popup = defaults.popup;
 
       // We don't seem to get the initial focus event?
       focusedComponent = this;
    }
+
+   // __________________________________________________________________________
+
+   /**
+    *  setPainter must be called first
+    */
+   public void setDefaults(TextAreaDefaults defaults)
+   {
+      // Load the defaults
+      this.setInputHandler(defaults.inputHandler);
+      this.setDocument(defaults.document);
+
+      this.editable = defaults.editable;
+      this.caretVisible = defaults.caretVisible;
+      this.caretBlinks = defaults.caretBlinks;
+      this.electricScroll = defaults.electricScroll;
+
+      this.popup = defaults.popup;
+   }
+
+   /**
+    *  Sets the painter implementatiom on setting the implementation
+    *  this componenet starts registering the associated events
+    */
+   public void setPainter(TextAreaPainter painter)
+   {
+      if (this.painter != null)
+      {
+         painter.removeMouseMotionListener(new DragHandler());
+         painter.removeMouseListener(new MouseHandler());
+         painter.removeComponentListener(new ComponentHandler());
+         painter.removeMouseWheelListener(new WheelHandler());
+
+         remove(this.painter); // remove from panel not strictly neccesary
+      }
+
+      // add to the component
+      add(CENTER,painter);
+
+      // listen to it
+      painter.addComponentListener(new ComponentHandler());
+      painter.addMouseListener(new MouseHandler());
+      painter.addMouseMotionListener(new DragHandler());
+      painter.addMouseWheelListener(new WheelHandler());
+
+
+      // finalise the painter
+      this.painter = painter;
+   }
+
+   // __________________________________________________________________________
 
    /**
     * Returns if this component can be traversed by pressing
@@ -541,6 +574,8 @@ public class JEditTextArea extends JComponent
     */
    public int xToOffset(int line, int x)
    {
+      x -= painter.getGutterOffset();
+
       TokenMarker tokenMarker = getTokenMarker();
 
       /* Use painter's cached info for speed */
@@ -1546,7 +1581,7 @@ public class JEditTextArea extends JComponent
 
    protected static JEditTextArea focusedComponent;
    protected static Timer caretTimer;
-   
+
    protected TextAreaPainter painter;
 
    protected JPopupMenu popup;
@@ -1565,7 +1600,7 @@ public class JEditTextArea extends JComponent
    protected int electricScroll;
 
    protected int horizontalOffset;
-   
+
    protected JScrollBar vertical;
    protected JScrollBar horizontal;
    protected boolean scrollBarsInitialized;
@@ -1657,7 +1692,7 @@ public class JEditTextArea extends JComponent
          updateScrollBars();
       }
    }
-   
+
    class ScrollLayout implements LayoutManager
    {
       public void addLayoutComponent(String name, Component comp)
@@ -1765,14 +1800,14 @@ public class JEditTextArea extends JComponent
             size.width - rightWidth - ileft - iright,
             bottomHeight);
       }
-      
+
       // private members
       private Component center;
       private Component right;
       private Component bottom;
       private Vector leftOfScrollBar = new Vector();
    }
-      
+
    static class CaretBlinker implements ActionListener
    {
       public void actionPerformed(ActionEvent evt)
@@ -1857,7 +1892,7 @@ public class JEditTextArea extends JComponent
 
          select(newStart,newEnd);
       }
-   
+
       public void removeUpdate(DocumentEvent evt)
       {
          documentChanged(evt);
@@ -1893,6 +1928,36 @@ public class JEditTextArea extends JComponent
 
       public void changedUpdate(DocumentEvent evt)
       {
+      }
+   }
+
+   class WheelHandler implements MouseWheelListener
+   {
+      public void mouseWheelMoved(MouseWheelEvent e)
+      {
+         int clicks = e.getWheelRotation();
+         boolean scrollDown = clicks > 0;
+         int block;
+
+         switch ( e.getScrollType() )
+         {
+            case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
+               if ( scrollDown )
+                  block = vertical.getBlockIncrement(1) * clicks;
+               else
+                  block = vertical.getBlockIncrement(-1) * clicks;
+               vertical.setValue(vertical.getValue()+block);
+               break;
+
+            case MouseWheelEvent.WHEEL_UNIT_SCROLL:
+               if ( scrollDown )
+                  block = vertical.getUnitIncrement(1) * clicks;
+               else
+                  block = vertical.getUnitIncrement(-1) * clicks;
+               vertical.setValue(vertical.getValue()+block);
+               break;
+
+         }
       }
    }
 
