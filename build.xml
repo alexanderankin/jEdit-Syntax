@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+
+<!--
+
+   Build file for jEdit Syntax Package
+
+Notes:
+   This is a build file for use with the Jakarta Ant java build tool.
+
+Howto build:
+
+   To build, run
+
+     ../bin/ant
+
+
+   $Id$
+
+-->
+
+<project name="jEdit-Syntax" default="main" basedir=".">
+
+  <!-- =================================================================== -->
+  <!-- Initializes the build process                                       -->
+  <!-- =================================================================== -->
+
+  <!-- default directory structure definitions -->
+  <property name="root.dir" value="."/>
+  <property name="jar.dir" value="${root.dir}"/>
+  <property name="src.dir" value="${root.dir}/src"/>
+  <property name="api.dir" value="${root.dir}/api"/>
+  <property name="build.dir" value="${root.dir}/classes"/>
+  <property name="distrib.build.dir" value="${root.dir}/.."/>
+
+  <!-- classpath to use within project -->
+  <path id="project.class.path">
+    <!-- compiled classes directory -->
+    <pathelement location="${build.dir}"/>
+
+    <!-- all jars in jar directory -->
+    <fileset dir="${jar.dir}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <!-- system property, environment classpath -->
+    <pathelement path="${java.class.path}"/>
+  </path>
+
+
+  <target name="init">
+    <tstamp/>
+    <property name="name" value="jEdit-Syntax"/>
+    <property name="version" value="2.2.2"/>
+
+    <property name="distrib.name" value="${name}-${version}"/>
+    <property name="distrib.dir" value="${distrib.build.dir}/${distrib.name}"/>
+    <property name="jarname" value="${name}"/>
+  </target>
+
+
+  <target name="prepare" depends="init">
+    <mkdir dir="${build.dir}"/>
+  </target>
+
+
+  <target name="main" depends="compile,bin-jar">
+  </target>
+
+
+  <target name="compile" depends="prepare,src,bin-jar">
+  </target>
+
+
+  <target name="src" depends="prepare">
+    <echo message="Compiling Source"/>
+    <javac srcdir="${src.dir}"
+           destdir="${build.dir}"
+           classpathref="project.class.path"
+           />
+  </target>
+
+
+  <target name="javadoc" depends="prepare">
+    <delete dir="${api.dir}"/>
+    <mkdir dir="${api.dir}"/>
+
+    <javadoc packagenames="org.dbxml.*"
+             sourcepath="${src.dir}"
+             destdir="${api.dir}"
+             classpathref="project.class.path"
+             public="true"
+             version="true"
+             use="true"
+             author="true"
+             overview=""
+             doctitle="jEdit Syntax Package"
+             header="jEdit Syntax Package"
+    />
+  </target>
+
+  <target name="bin-jar" depends="prepare">
+    <jar jarfile="${jar.dir}/${jarname}.jar"
+         basedir="${build.dir}"
+    />
+  </target>
+
+
+  <target name="clean" depends="init, clean-jar">
+    <delete dir="${build.dir}"/>
+    <delete dir="${api.dir}"/>
+  </target>
+
+  <target name="clean-jar">
+    <delete file="${jar.dir}/${jarname}.jar"/>
+  </target>
+
+</project>
